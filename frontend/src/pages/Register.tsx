@@ -73,8 +73,8 @@ function Register() {
                 })
                 .catch(err => {
 
-                    // server side validation errors for availability of 'username' and 'email'
-                    if (err.response.status === 400) {
+                    // server side validation errors#
+                    if (err.response.error === 400) {
 
                         let errors: ApiErrors[] = err.response.data.error;
 
@@ -95,7 +95,7 @@ function Register() {
 
     return (
         <>
-            <div className="flex  flex-col justify-center items-center bg-gray-800 min-h-screen" style={{ minHeight: '100dvh' }}>
+            <div className="flex flex-col justify-center items-center bg-gray-800 min-h-screen" style={{ minHeight: '100dvh' }}>
 
                 {error === '' ? null : (
                     <>

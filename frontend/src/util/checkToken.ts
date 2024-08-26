@@ -1,17 +1,42 @@
-export const isTokenPresent = (): boolean => {
-    // Get all cookies as a single string
-    const cookies = document.cookie;
-    // Split the cookies string into individual cookies
-    const cookiesArray = cookies.split('; ');
+import axios from "axios";
 
-    // Iterate over the cookies array to find the desired cookie
-    for (let cookie of cookiesArray) {
-      // Extract the cookie name and value
-      const [name] = cookie.split('=');
-      if (name === 'token') {
-        return true; // Token cookie is present
-      }
-    }
+export const isTokenPresent = async (): Promise<{ authenticated: boolean; cmsAccess: boolean }> => {
 
-    return false; // Token cookie is not present
+  let authUser = {
+    authenticated: false,
+    cmsAccess: false,
   };
+
+  // Get all cookies as a single string
+  const cookies = document.cookie;
+  // Split the cookies string into individual cookies
+  const cookiesArray = cookies.split('; ');
+
+  // Iterate over the cookies array to find the desired cookie
+  for (let cookie of cookiesArray) {
+    // Extract the cookie name and value
+    const [name] = cookie.split('=');
+    if (name === 'token') {
+      try {
+        const res = await axios.get('http://localhost:3000/authenticate');
+        authUser.authenticated = true;
+
+        console.log(res);
+
+        if (res.data.user.isAdmin === 'true') {
+          authUser.cmsAccess = true;
+        } else {
+          authUser.cmsAccess = false;
+        }
+      } catch (err) {
+        console.log(err);
+        authUser.authenticated = false;
+        authUser.cmsAccess = false;
+      }
+
+      return authUser;
+    }
+  }
+
+  return authUser;
+};

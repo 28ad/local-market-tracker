@@ -1,18 +1,33 @@
+import { useEffect, useState } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { isTokenPresent } from '../util/checkToken';
 
-const PrivateRoutes = () => {
+const CMSPrivateRoutes = () => {
+  const [loading, setLoading] = useState(true);
+  const [authUser, setAuthUser] = useState<{ authenticated: boolean; cmsAccess: boolean }>({
+    authenticated: false,
+    cmsAccess: false,
+  });
 
-  if (isTokenPresent()) {
-    console.log('Token cookie is present');
-  } else {
-    console.log('Token cookie is not present');
+  useEffect(() => {
+    const checkAuth = async () => {
+      const result = await isTokenPresent();
+      setAuthUser(result);
+      console.log(authUser);
+      setLoading(false);
+    };
+    checkAuth();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
+  if (authUser.authenticated && authUser.cmsAccess) {
+    return <Outlet />;
+  } else {
+    return <Navigate to='/cms' />;
+  }
+};
 
-  return (
-    isTokenPresent() ? <Outlet /> : <Navigate to='/cms' />
-  )
-}
-
-export default PrivateRoutes;
+export default CMSPrivateRoutes;

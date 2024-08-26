@@ -30,53 +30,47 @@ const authUser = (req, res, next) => {
   const token = req.cookies.token;
 
   if (!token) {
-
-    return res.json({ Error: 'No user is currently logged in!' });
+    return res.status(401).json({ Error: 'No user is currently logged in!' });
   }
 
-  else {
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.log(err.message);
 
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-      if (err) {
-
-        console.log(err.message);
-
-        if (err.name === 'TokenExpiredError') {
-          // Token is expired
-          res.clearCookie('token'); // Clear the cookie
-          return res.status(401).json({ message: 'Session expired. Please log in again.' });
-        }
-        return res.json({ Error: 'Invalid token: ' + err.message });
-
-      } else {
-        req.user_id = decoded.user_id;
-
-        // query data for decoded user_id
-        const sqlQuery = 'SELECT * FROM users WHERE id = ?';
-        db.query(sqlQuery, [decoded.user_id], (err, data) => {
-          if (err) {
-            console.error('Error during DB query:', err);
-            return res.json({ Error: 'Server authentication error!' });
-          }
-
-          if (data.length === 0) {
-
-            return res.json({ Error: 'User not found!' });
-          }
-
-          // Return the fetched user data directly
-          return res.json({ user: data[0] });
-
-        });
+      if (err.name === 'TokenExpiredError') {
+        // Token is expired
+        res.clearCookie('token'); // Clear the cookie
+        return res.status(401).json({ message: 'Session expired. Please log in again.' });
       }
+      return res.status(401).json({ Error: 'Invalid token: ' + err.message });
+    }
+
+    req.user_id = decoded.user_id;
+
+    // Query data for decoded user_id
+    const sqlQuery = 'SELECT * FROM users WHERE id = ?';
+    db.query(sqlQuery, [decoded.user_id], (err, data) => {
+      if (err) {
+        console.error('Error during DB query:', err);
+        return res.status(500).json({ Error: 'Server authentication error!' });
+      }
+
+      if (data.length === 0) {
+        return res.status(404).json({ Error: 'User not found!' });
+      }
+
+      req.user = data[0]; // Store the user in req object
+      next(); // Proceed to the route handler
     });
-  }
+  });
 };
+
 
 // Route to authenticate user
 app.get('/authenticate', authUser, (req, res) => {
-  res.send('User authenticated');
+  res.json({ message: 'User authenticated', user: req.user });
 });
+
 
 // =============================================================================================================
 
@@ -234,10 +228,10 @@ app.post('/register', (req, res) => {
 
       // Check if the username or email already exists
       if (data.some(row => row.username === newUser.username)) {
-        errors.push({message: 'Username already exists. '});
+        errors.push({ message: 'Username already exists. ' });
       }
       if (data.some(row => row.email === newUser.email)) {
-        errors.push({message: 'Email already exists.'});
+        errors.push({ message: 'Email already exists.' });
       }
 
       return res.status(400).json({ error: errors });
@@ -262,9 +256,34 @@ app.post('/register', (req, res) => {
 });
 
 // login user to main app
-// app.post('/login',  (req, res) => {
+app.post('/login', (req, res) => {
+  console.log('Request received:', req.body);
 
-// });
+  const sqlQuery = 'SELECT * FROM users WHERE email = ?';
+
+  db.query(sqlQuery, [req.body.email], (err, data) => {
+    if (err) {
+      console.error('Error during DB query:', err);
+      return res.status(500).json({ error: 'Server authentication error!' });
+    }
+
+    if (data.length === 0) {
+      return res.status(400).json({ error: 'No account registered under these credentials!' });
+    }
+
+    if (req.body.email !== data[0].email || req.body.password !== data[0].pass) {
+      return res.status(400).json({ error: 'Username/password do not match existing records!' });
+    }
+
+    // Generate JWT token and send it to the client
+    const user = data[0];
+    const token = jwt.sign({ user_id: user.id }, JWT_SECRET, { expiresIn: '1d' });
+
+    res.cookie('token', token);
+    return res.status(200).json({ status: 'success', token: token, user: user.username, message: "Login successful !" });
+  });
+});
+
 
 // logout
 
