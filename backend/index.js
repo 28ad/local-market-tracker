@@ -25,7 +25,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(helmet());
 
-// check which user is logged in currently and retrieve user_id
+// authenticate user
 const authUser = (req, res, next) => {
   const token = req.cookies.token;
 
@@ -38,8 +38,7 @@ const authUser = (req, res, next) => {
       console.log(err.message);
 
       if (err.name === 'TokenExpiredError') {
-        // Token is expired
-        res.clearCookie('token'); // Clear the cookie
+        res.clearCookie('token');
         return res.status(401).json({ message: 'Session expired. Please log in again.' });
       }
       return res.status(401).json({ Error: 'Invalid token: ' + err.message });
@@ -47,42 +46,60 @@ const authUser = (req, res, next) => {
 
     req.user_id = decoded.user_id;
 
-    // Query data for decoded user_id
-    const sqlQuery = 'SELECT * FROM users WHERE id = ?';
-    db.query(sqlQuery, [decoded.user_id], (err, data) => {
-      if (err) {
-        console.error('Error during DB query:', err);
-        return res.status(500).json({ Error: 'Server authentication error!' });
-      }
-
-      if (data.length === 0) {
-        return res.status(404).json({ Error: 'User not found!' });
-      }
-
-      req.user = data[0]; // Store the user in req object
-      next(); // Proceed to the route handler
-    });
+    // Proceed to the next middleware if token is valid
+    next();
   });
 };
 
 
+// get authenticcated user's data
+const getUserData = (req, res, next) => {
+  const userId = req.user_id;
+
+  const sqlQuery = 'SELECT * FROM users WHERE id = ?';
+  db.query(sqlQuery, [userId], (err, data) => {
+    if (err) {
+      console.error('Error during DB query:', err);
+      return res.status(500).json({ Error: 'Server authentication error!' });
+    }
+
+    if (data.length === 0) {
+      return res.status(404).json({ Error: 'User not found!' });
+    }
+
+    req.user = data[0]; // Store the user in req object
+    next(); // Proceed to the route handler
+  });
+};
+
+const authenticate = [authUser, getUserData];
+
 // Route to authenticate user
-app.get('/authenticate', authUser, (req, res) => {
+app.get('/authenticate', authenticate, (req, res) => {
   res.json({ message: 'User authenticated', user: req.user });
 });
 
 
 // =============================================================================================================
 
+function checkProductFavStatus(product) {
+
+};
+
 // Get all products from DB
-app.get('/products', (req, res) => {
+app.get('/products', authenticate, (req, res) => {
+
   const sqlQuery = 'SELECT * FROM products;';
 
   db.query(sqlQuery, (err, data) => {
+
     if (err) {
+
       console.error('Error during DB query:', err);
-      return res.json({ error: 'MYSQL error!' });
+      return res.json({ error: 'Error fetching products from database !' });
+
     } else {
+
       const products = data;
       return res.json({ products: products });
     }
@@ -293,6 +310,103 @@ app.get('/logout', (req, res) => {
   res.json({ status: 'success' });
 
 })
+
+function selectFavProductsData(favProducts) {
+  return new Promise((resolve, reject) => {
+    let favProductsList = [];
+    const selectQuery = 'SELECT * FROM products WHERE id = ?';
+
+    // Use Promise.all to handle multiple asynchronous operations
+    const queries = favProducts.map(favProduct => {
+      return new Promise((resolveQuery, rejectQuery) => {
+        db.query(selectQuery, [favProduct.product_id], (err, data) => { // Ensure product_id is correct
+          if (err) {
+            console.error('Error querying product:', err);
+            rejectQuery(err);
+          } else if (data && data.length > 0) { // Check if data is not empty
+            favProductsList.push(data[0]); // Push the first product, assuming there is only one match
+            resolveQuery();
+          } else {
+            resolveQuery(); // Resolve even if no data is found for the given ID
+          }
+        });
+      });
+    });
+
+    // Wait for all queries to complete
+    Promise.all(queries)
+      .then(() => resolve(favProductsList))
+      .catch(err => reject(err));
+  });
+}
+
+app.get('/favourites', authenticate, async (req, res) => {
+  const userId = req.user.id;
+
+  const sqlQuery = 'SELECT * FROM favourites WHERE user_id = ?';
+
+  db.query(sqlQuery, [userId], async (err, results) => {
+    if (err) {
+      console.error('Error fetching favourites:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    try {
+      // Wait for selectFavProductsData to finish
+      const finalResults = await selectFavProductsData(results);
+
+      console.log('Final Results:', finalResults);
+
+      return res.json({ favourites: finalResults });
+    } catch (error) {
+      console.error('Error retrieving favourite products:', error);
+      return res.status(500).json({ error: 'Failed to retrieve favourite products' });
+    }
+  });
+});
+
+app.delete('/favourites/delete/:id' , authenticate, (req, res) => {
+
+  const favProductId = req.params.id;
+
+  const deleteQuery = 'DELETE FROM favourites WHERE user_id = ? AND product_id = ?;';
+
+  db.query(deleteQuery, [req.user.id, favProductId], (err, data) => {
+
+    if (err) {
+
+      return res.json({ error: 'Error during DB query: ' + err });
+    }
+
+    if (data.affectedRows === 0) {
+      return res.json({ error: 'Product ID not found !' + favProductId });
+    }
+
+    return res.json({ message: 'Product removed successfully !' })
+  });
+
+
+});
+
+app.post('/favourites/add', authenticate, (req, res) => {
+  const product = req.body;
+
+  console.log(product);
+
+  const insertQuery = 'INSERT INTO favourites (user_id, product_id) VALUES (?, ?);';
+
+  db.query(insertQuery, [req.user.id, product.id], (err, data) => {
+
+    if (err) {
+
+      return res.status(500).json({ error: 'Database error' });
+
+    }
+
+    return res.json({ message: 'Added the following items to favourites:', favourites: product });
+  });
+
+});
 
 // Start the server
 app.listen(port, () => {
