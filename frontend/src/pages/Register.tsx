@@ -154,7 +154,7 @@ function Register() {
 
                         {/* button */}
 
-                        <div className="flex flex-col items-center mt-8">
+                        <div className="flex flex-col items-center mt-4">
                             <FormButton label="Register" onClick={registerUser} />
                         </div>
 

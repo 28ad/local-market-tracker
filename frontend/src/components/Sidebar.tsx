@@ -34,7 +34,7 @@ function Sidebar() {
     return (
 
         <>
-            <aside className="w-64 h-screen bg-gray-800 relative">
+            <aside className="w-64 h-screen bg-gray-800 relative min-h-screen" style={{ minHeight: '100dvh' }}>
 
                 {/* sidebar header */}
                 <div className="flex items-center justify-between py-4">
