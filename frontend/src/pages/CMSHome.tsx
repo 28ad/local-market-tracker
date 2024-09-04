@@ -86,16 +86,16 @@ function CMSHome() {
     const logout = () => {
 
         axios.get('http://localhost:3000/logout')
-        .then( res=> {
+            .then(res => {
 
-            if(res.data.status === 'success') {
-                window.location.href = '/cms';
-            }
+                if (res.data.status === 'success') {
+                    window.location.href = '/cms';
+                }
 
-        })
-        .catch( err => {
-            alert(err);
-        });
+            })
+            .catch(err => {
+                alert(err);
+            });
     }
 
     const fetchProductsList = () => {
@@ -113,14 +113,60 @@ function CMSHome() {
         fetchProductsList();
     }, []);
 
+    // add new price to 'price_history' table
+
+    const updatePriceHistory = (itemId: number, price: string) => {
+
+        let date = new Date();
+        let mySqlDate = date.toISOString().slice(0, 10);
+
+        let newPriceObj = {
+            productId: itemId,
+            price: price,
+            date: mySqlDate
+        }
+
+        axios.post('http://localhost:3000/price-history/new', newPriceObj)
+            .then(res => {
+
+                if (res.data.error) {
+
+                    alert(res.data.error);
+                    return;
+                }
+
+                console.log(res.data.message)
+            })
+            .catch(err => {
+
+                console.log(err);
+            });
+    }
+
     // add a product to the database
     const addProduct = () => {
+
+        let newProductId;
+
+
         if (!validateForm()) {
             return;
         }
 
         axios.post('http://localhost:3000/cms/add-product', newProductDetails)
             .then(res => {
+
+                if(res.data.Error) {
+
+                    alert(res.data.Error);
+                    return;
+                }
+
+                newProductId = res.data.product_id;
+
+                console.log(typeof(newProductId) + newProductId);
+
+                updatePriceHistory(newProductId, newProductDetails.price)
 
                 fetchProductsList(); // Refresh the products list
             })
@@ -160,7 +206,7 @@ function CMSHome() {
 
         }
 
-        const product_price = Number(editedProductPrice);
+        // const product_price = Number(editedProductPrice);
 
         axios.put(`http://localhost:3000/cms/edit-product/${itemId}`, { price: editedProductPrice })
             .then(res => {
@@ -201,8 +247,8 @@ function CMSHome() {
                     <p>Welcome, {loggedInUser ? loggedInUser.username : 'Loading...'}</p>
                     <p>{loggedInUser ? loggedInUser.email : 'Loading...'}</p>
                     <button
-                    onClick={logout}
-                    className="py-2 px-8 text-white font-bold bg-red-600 hover:bg-red-700 shadow-md cursor-pointer rounded-sm"
+                        onClick={logout}
+                        className="py-2 px-8 text-white font-bold bg-red-600 hover:bg-red-700 shadow-md cursor-pointer rounded-sm"
                     >Logout</button>
                 </div>
 

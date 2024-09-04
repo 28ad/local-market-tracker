@@ -63,7 +63,7 @@ function Favourites() {
                 <Sidebar />
 
                 {isLoading ? <Loading /> :
-                    <div className="flex-1">
+                    <div className="flex-1 ml-16 md:ml-0">
 
                         <h1 className="p-4 text-3xl font-semibold">My Favourites</h1>
 
@@ -88,7 +88,7 @@ function Favourites() {
 
                         <div className="flex flex-col items-center mt-10">
 
-                            <table className="w-9/12 shadow-md rounded-xl py-8">
+                            <table className="w-9/12 shadow-md rounded-xl mb-10">
                                 <thead>
                                     <tr className="h-16 text-xl">
                                         <th className="w-8"></th>

@@ -82,9 +82,6 @@ app.get('/authenticate', authenticate, (req, res) => {
 
 // =============================================================================================================
 
-function checkProductFavStatus(product) {
-
-};
 
 // Get all products from DB
 app.get('/products', authenticate, (req, res) => {
@@ -168,7 +165,7 @@ app.post('/cms/add-product', (req, res) => {
         }
 
 
-        return res.json({ Status: 'success' });
+        return res.json({ Status: 'success', product_id: data.insertId});
       });
     }
   });
@@ -179,6 +176,24 @@ app.post('/cms/add-product', (req, res) => {
 app.delete('/cms/remove-product/:id', (req, res) => {
 
   const productId = req.params.id;
+
+  // query to delete from favourites first
+  const deleteFavQuery = 'DELETE FROM favourites WHERE product_id = ?'
+
+  db.query(deleteFavQuery, [productId], (err, data) => {
+
+    if (err) {
+
+      return res.json({ Error: 'Error during DB query: ' + err });
+    }
+
+    if (data.affectedRows === 0) {
+      return res.json({ Error: 'Product ID not found !' + productId.id });
+    }
+
+  });
+
+  // query to delete from products table
 
   const deleteQuery = 'DELETE FROM products WHERE id = ?';
 
@@ -195,6 +210,7 @@ app.delete('/cms/remove-product/:id', (req, res) => {
 
     return res.json({ Message: 'Product removed successfully !' })
   });
+
 });
 
 // edit product from CMS
@@ -220,6 +236,33 @@ app.put('/cms/edit-product/:id', (req, res) => {
   });
 
 });
+
+// add new product/new price to price_history table
+app.post('/price-history/new', (req, res) => {
+
+  const productId = req.body.productId;
+  const price = req.body.price;
+  const date = req.body.date;
+
+  const insertQuery = 'INSERT INTO price_history (product_id, price, updated_on) VALUES (?,?,?)';
+
+  db.query(insertQuery, [productId, price, date], (err, data) => {
+
+    if(err) {
+      
+      return res.json({ error: 'Error during DB query: ' + err });
+
+    }
+
+    if (data.affectedRows === 0) {
+      return res.json({ error: 'Product ID not found !' + productId.id });
+    }
+
+    return res.json({ message: 'Price saved successfully !' })
+
+  })
+
+})
 
 // ================================================================================================================
 

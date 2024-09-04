@@ -24,9 +24,10 @@ const ProtectedRoutes = () => {
   }
 
   if (authUser.authenticated) {
-    return <Outlet />;
+    return <Navigate to='/dashboard' />;
+    
   } else {
-    return <Navigate to='/login' />;
+    return <Outlet />;
   }
 };
 

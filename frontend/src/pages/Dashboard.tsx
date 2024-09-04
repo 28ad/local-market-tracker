@@ -31,15 +31,15 @@ function Dashboard() {
 
         try {
             const res = await axios.get('http://localhost:3000/products');
-            const favouriteProducts = res.data.products.map((product: Product) => ({
+            const setFavStatusProducts = res.data.products.map((product: Product) => ({
                 ...product,
                 addToFavourites: favourites.includes(product.id),
             }));
 
-            console.log(favouriteProducts);
-            setProducts(favouriteProducts);
+            console.log(setFavStatusProducts);
+            setProducts(setFavStatusProducts);
 
-            setTimeout(() => { setIsLoading(false) }, 3000);
+            setTimeout(() => { setIsLoading(false) }, 2000);
 
         } catch (err) {
             console.log(err);
@@ -48,16 +48,16 @@ function Dashboard() {
 
     // Fetch favourites only once when the component mounts
     useEffect(() => {
-        setIsLoading(true);
+
         fetchFavourites();
     }, []);
 
     // Fetch products whenever the favourites change
     useEffect(() => {
-        if (favourites.length > 0) {
+        setIsLoading(true);
 
-            fetchProducts(favourites);
-        }
+        fetchProducts(favourites);
+
     }, [favourites]);
 
     const toggleFavourites = async (item: Product) => {
@@ -105,7 +105,7 @@ function Dashboard() {
 
             {isLoading ? <Loading /> :
 
-                <div className="flex-1">
+                <div className="flex-1 ml-16 md:ml-0">
                     <h1 className="p-4 text-3xl font-semibold">Dashboard</h1>
                     <div className="flex justify-center">
                         <div className="w-full mx-4 h-[1px] bg-black"></div>
@@ -114,7 +114,7 @@ function Dashboard() {
                         <div className="w-9/12 h-96 bg-red-500"></div>
                     </div>
                     <div className="flex justify-center mt-10">
-                        <table className="w-9/12 shadow-md rounded-xl">
+                        <table className="w-9/12 shadow-md rounded-xl mb-10">
                             <thead>
                                 <tr className="h-16 text-xl">
                                     <th className="w-8"></th>

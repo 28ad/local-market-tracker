@@ -9,6 +9,7 @@ import CMS from "./pages/CMS";
 import CMSHome from "./pages/CMSHome";
 import CMSProtectedRoutes from "./components/CMSProtectedRoutes";
 import ProtectedRoutes from "./components/ProtectedRoutes";
+import AuthProtectedRoutes from './components/AuthProtectedRoutes';
 
 
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -21,9 +22,13 @@ function App() {
       <Routes>
 
       <Route path="/" element={<Home/>}/>
-      <Route path="/cms" element={<CMS/>}/>
-      <Route path="/login" element={<Login/>}/>
-      <Route path="/register" element={<Register/>}/>
+
+      <Route element={<AuthProtectedRoutes/>}>
+        <Route path="/cms" element={<CMS/>}/>
+        <Route path="/login" element={<Login/>}/>
+        <Route path="/register" element={<Register/>}/>
+      </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} /> 
 
         {/* main app protected routes */}
