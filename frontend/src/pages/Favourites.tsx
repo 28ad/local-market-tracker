@@ -1,5 +1,6 @@
 import Sidebar from "../components/Sidebar";
 import Loading from "../components/Loading";
+import LineChart from "../components/LineChart";
 import axios from "axios";
 import { useState, useEffect } from "react";
 
@@ -15,6 +16,9 @@ function Favourites() {
 
     const [favourites, setFavourites] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [priceHistoryData, setPriceHistoryData] = useState([]);
+    const [chartProductName, setChartProductName] = useState<string>('');
+
 
     const fetchFavourites = () => {
 
@@ -25,7 +29,7 @@ function Favourites() {
 
                 console.log(res.data.favourites);
 
-                setTimeout(() => {setIsLoading(false)}, 2000);
+                setTimeout(() => { setIsLoading(false) }, 2000);
 
             })
             .catch(err => {
@@ -54,18 +58,38 @@ function Favourites() {
             });
     }
 
+    const fetchPriceHistory = (item: Product, product: string) => {
+
+        axios.get(`http://localhost:3000/price-history/${item.id}`)
+            .then(res => {
+
+                setPriceHistoryData(res.data.prices);
+                setChartProductName(product);
+                console.log(priceHistoryData);
+            })
+            .catch(err => {
+
+                console.log(err);
+
+            });
+    }
+
     return (
 
         <>
 
             <div className="flex flex-row overflow-hidden">
 
-                <Sidebar />
+
+                <div className="flex md:w-16">
+                    <Sidebar />
+                </div>
 
                 {isLoading ? <Loading /> :
+
                     <div className="flex-1 ml-16 md:ml-0">
 
-                        <h1 className="p-4 text-3xl font-semibold">My Favourites</h1>
+                        <h1 className="p-4 text-3xl font-semibold">Favourites</h1>
 
                         {/* separation bar */}
 
@@ -78,11 +102,13 @@ function Favourites() {
 
                         {/* Main graph */}
 
-                        {/* <div className="flex justify-center items-center mt-10 gap-10">
+                        {priceHistoryData.length > 0 ? (
+                            <div className="flex justify-center items-center mt-10 gap-10">
+                                <LineChart data={priceHistoryData} product={chartProductName}/>
+                            </div>
 
-                    <div className="w-9/12 h-96 bg-red-500"></div>
-
-                </div> */}
+                        ) : null
+                        }
 
                         {/* products list */}
 
@@ -103,6 +129,8 @@ function Favourites() {
                                         <tr
                                             key={item.id}
                                             className={index % 2 === 0 ? 'bg-gray-100 text-xl' : 'bg-white text-xl'}
+                                            style={{ height: '6px', cursor: 'pointer' }}
+                                            onClick={() => fetchPriceHistory(item, item.product_name)}
                                         >
                                             <td className="flex justify-center items-center">
 
@@ -113,7 +141,7 @@ function Favourites() {
                                                 </svg>
 
                                             </td>
-                                            <td className="text-center">{item.product_name}</td>
+                                            <td className="text-left sm:text-center">{item.product_name}</td>
                                             <td className="text-center">{item.price}</td>
                                             <td className="text-center"></td>
                                         </tr>

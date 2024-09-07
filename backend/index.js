@@ -451,6 +451,30 @@ app.post('/favourites/add', authenticate, (req, res) => {
 
 });
 
+app.get('/price-history/:id', (req, res) => {
+
+  let productId = req.params.id;
+
+  const selectQuery = 'SELECT * FROM price_history WHERE product_id = ?;';
+
+  db.query(selectQuery, [productId], (err, data) => {
+
+    if (err) {
+
+      return res.json({error: 'DB Error: ' + err});
+
+    }
+
+    if (data.length === 0) {
+      return res.json({error: "Product doesn't exist in the database !"});
+    }
+
+    return res.json({status: 'success', prices: data});
+
+    
+  });
+})
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

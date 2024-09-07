@@ -42,7 +42,7 @@ function Sidebar() {
     return (
 
         <>
-            <aside className={`${isMenuClosed ? 'w-full sm:w-64' : 'w-16'} bg-gray-800 fixed md:relative min-h-screen`} style={{ minHeight: '100dvh', }}>
+            <aside className={`${isMenuClosed ? 'w-full sm:w-64' : 'w-16'} bg-gray-800 fixed min-h-screen`} style={{ minHeight: '100dvh', }}>
 
                 {isMenuClosed ? (
 
