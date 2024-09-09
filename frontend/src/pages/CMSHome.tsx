@@ -220,6 +220,8 @@ function CMSHome() {
 
                 alert(err);
             });
+
+            updatePriceHistory(itemId, editedProductPrice)
     };
 
     // remove a product from the DB

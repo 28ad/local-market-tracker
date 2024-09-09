@@ -9,7 +9,13 @@ interface Product {
     id: number;
     product_name: string;
     price: number;
-    addToFavourites: boolean;
+    priceChange: number;
+}
+
+interface PriceHistory {
+    product_id: number;
+    price: string;
+    updated_on: string;
 }
 
 function Favourites() {
@@ -20,14 +26,14 @@ function Favourites() {
     const [chartProductName, setChartProductName] = useState<string>('');
 
 
-    const fetchFavourites = () => {
+    const fetchFavourites = async () => {
 
         axios.get('http://localhost:3000/favourites')
             .then(res => {
 
                 setFavourites(res.data.favourites);
 
-                console.log(res.data.favourites);
+                console.log(favourites);
 
                 setTimeout(() => { setIsLoading(false) }, 2000);
 
@@ -38,10 +44,95 @@ function Favourites() {
             })
     }
 
+    const fetchPriceHistory = (item: Product, product: any) => {
+
+        axios.get(`http://localhost:3000/price-history/${item.id}`)
+            .then(res => {
+
+                const priceHistoryArr = res.data.prices;
+
+                setPriceHistoryData(priceHistoryArr);
+                setChartProductName(product);
+
+                console.log(priceHistoryArr);
+            })
+            .catch(err => {
+
+                console.log(err);
+
+            });
+    }
+
+    const fetchAllPriceHistory = async () => {
+
+        await fetchPriceHistory;
+
+        axios.get(`http://localhost:3000/price-history`)
+            .then(async res => {
+
+                const priceHistoryArr: PriceHistory[] = res.data.prices;
+
+                setFavourites((prevFavourites) => {
+
+                    return prevFavourites?.map(product => {
+
+                        const matchedPriceHistory = priceHistoryArr.find(history => history.product_id === product.id);
+
+                        console.log(matchedPriceHistory);
+                        console.log(product);
+
+                        if (matchedPriceHistory) {
+
+                            const currentProductArr = priceHistoryArr.filter(item => item.product_id === product.id);
+
+                            let latestPriceIndex = currentProductArr.length - 1;
+                            let lastWeekIndex = latestPriceIndex - 1;
+
+                            console.log(latestPriceIndex, lastWeekIndex);
+
+                            if (lastWeekIndex >= 0) {
+                                // Convert the price string to a number for calculations
+                                const currentPrice = parseFloat(currentProductArr[latestPriceIndex].price);
+                                const lastWeekPrice = lastWeekIndex >= 0 ? parseFloat(currentProductArr[lastWeekIndex].price) : currentPrice;
+                                const priceChangePercentage = ((currentPrice - lastWeekPrice) / lastWeekPrice) * 100;
+
+                                console.log(typeof (priceChangePercentage));
+                                console.log(priceChangePercentage);
+
+
+                                return {
+                                    ...product,
+                                    priceChange: Math.round(priceChangePercentage * 1e1) / 1e1 // Update the price change
+                                };
+                            }
+                        }
+
+                        return product;
+                    }) || [];
+                });
+
+                console.log(priceHistoryArr);
+
+            })
+            .catch(err => {
+
+                console.log(err);
+
+            });
+
+    }
+
     useEffect(() => {
         setIsLoading(true);
         fetchFavourites();
     }, []);
+
+    useEffect(() => {
+        if(favourites.length > 0) {
+            fetchAllPriceHistory();
+        }
+
+    }, [favourites.length]);
 
     const removeFromFavourties = (itemId: number) => {
 
@@ -58,22 +149,7 @@ function Favourites() {
             });
     }
 
-    const fetchPriceHistory = (item: Product, product: string) => {
-
-        axios.get(`http://localhost:3000/price-history/${item.id}`)
-            .then(res => {
-
-                setPriceHistoryData(res.data.prices);
-                setChartProductName(product);
-                console.log(priceHistoryData);
-            })
-            .catch(err => {
-
-                console.log(err);
-
-            });
-    }
-
+    
     return (
 
         <>
@@ -104,7 +180,7 @@ function Favourites() {
 
                         {priceHistoryData.length > 0 ? (
                             <div className="flex justify-center items-center mt-10 gap-10">
-                                <LineChart data={priceHistoryData} product={chartProductName}/>
+                                <LineChart data={priceHistoryData} product={chartProductName} />
                             </div>
 
                         ) : null
@@ -129,10 +205,10 @@ function Favourites() {
                                         <tr
                                             key={item.id}
                                             className={index % 2 === 0 ? 'bg-gray-100 text-xl' : 'bg-white text-xl'}
-                                            style={{ height: '6px', cursor: 'pointer' }}
+                                            style={{ height: '60px', cursor: 'pointer' }}
                                             onClick={() => fetchPriceHistory(item, item.product_name)}
                                         >
-                                            <td className="flex justify-center items-center">
+                                            <td className="flex justify-center items-center h-[60px]">
 
                                                 <svg
                                                     onClick={() => removeFromFavourties(item.id)}
@@ -143,9 +219,16 @@ function Favourites() {
                                             </td>
                                             <td className="text-left sm:text-center">{item.product_name}</td>
                                             <td className="text-center">{item.price}</td>
-                                            <td className="text-center"></td>
+
+                                            {item.priceChange > 0 ? (
+
+                                                <td className="text-center font-bold text-green-600">+{item.priceChange}%</td>
+                                            ) : item.priceChange === 0 ? (<td className="text-center font-bold text-blue-600">{item.priceChange}%</td>) : (
+                                                <td className="text-center font-bold text-red-600">{item.priceChange}%</td>
+                                            )}
                                         </tr>
                                     ))}
+
                                 </tbody>
 
                             </table>

@@ -184,11 +184,7 @@ app.delete('/cms/remove-product/:id', (req, res) => {
 
     if (err) {
 
-      return res.json({ Error: 'Error during DB query: ' + err });
-    }
-
-    if (data.affectedRows === 0) {
-      return res.json({ Error: 'Product ID not found !' + productId.id });
+      return res.status(500).json({ Error: 'Error during DB query: ' + err });
     }
 
   });
@@ -201,14 +197,14 @@ app.delete('/cms/remove-product/:id', (req, res) => {
 
     if (err) {
 
-      return res.json({ Error: 'Error during DB query: ' + err });
+      return res.status(500).json({ Error: 'Error during DB query: ' + err });
     }
 
     if (data.affectedRows === 0) {
-      return res.json({ Error: 'Product ID not found !' + productId.id });
+      return res.status(500).json({ Error: 'Product ID not found !' + productId.id });
     }
 
-    return res.json({ Message: 'Product removed successfully !' })
+    return res.status(200).json({ Message: 'Product removed successfully !' })
   });
 
 });
@@ -450,6 +446,24 @@ app.post('/favourites/add', authenticate, (req, res) => {
   });
 
 });
+
+app.get('/price-history', (req, res) => {
+
+  const selectQuery = 'SELECT * FROM price_history;';
+
+  db.query(selectQuery, (err, data) => {
+
+    if (err) {
+
+      return res.json({error: 'DB Error: ' + err});
+
+    }
+
+    return res.json({status: 'success', prices: data});
+
+    
+  });
+})
 
 app.get('/price-history/:id', (req, res) => {
 

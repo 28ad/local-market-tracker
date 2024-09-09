@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import Logo from '../assets/images/logo.png';
 
 function Sidebar() {
 
@@ -50,7 +51,7 @@ function Sidebar() {
                         {/* sidebar header */}
                         <div className="flex items-center justify-between py-4">
 
-                            <h1 className="text-2xl font-bold text-white ml-4">VMTracker</h1>
+                            <img src={Logo} className="w-20 ml-4"/>
 
                             <svg
                                 onClick={toggleSidebar}

@@ -10,6 +10,13 @@ interface Product {
     product_name: string;
     price: number;
     addToFavourites?: boolean;
+    priceChange: number;
+}
+
+interface PriceHistory {
+    product_id: number;
+    price: string; 
+    updated_on: string;
 }
 
 function Dashboard() {
@@ -50,6 +57,7 @@ function Dashboard() {
         }
     };
 
+
     // Fetch favourites only once when the component mounts
     useEffect(() => {
 
@@ -60,24 +68,87 @@ function Dashboard() {
     useEffect(() => {
         setIsLoading(true);
 
-        fetchProducts(favourites);
+        fetchProducts(favourites).then(fetchAllPriceHistory);
 
     }, [favourites]);
+
 
     const fetchPriceHistory = (item: Product, product: any) => {
 
         axios.get(`http://localhost:3000/price-history/${item.id}`)
-        .then( res => {
-            
-            setPriceHistoryData(res.data.prices);
-            setChartProductName(product);
-            console.log(priceHistoryData);
-        })
-        .catch( err => {
-            
-            console.log(err);
+            .then(res => {
 
-        });
+                const priceHistoryArr = res.data.prices;
+
+                setPriceHistoryData(priceHistoryArr);
+                setChartProductName(product);
+
+                console.log(priceHistoryArr);
+            })
+            .catch(err => {
+
+                console.log(err);
+
+            });
+    }
+
+    const fetchAllPriceHistory = async () => {
+
+        await fetchPriceHistory;
+
+        axios.get(`http://localhost:3000/price-history`)
+            .then(async res => {
+
+                const priceHistoryArr: PriceHistory[] = res.data.prices;
+
+                setProducts((prevProducts) => {
+
+                    return prevProducts?.map(product => {
+
+                        const matchedPriceHistory = priceHistoryArr.find(history => history.product_id === product.id);
+
+                        console.log(matchedPriceHistory);
+                        console.log(product);
+
+                        if (matchedPriceHistory) {
+
+                            const currentProductArr = priceHistoryArr.filter(item => item.product_id === product.id);
+
+                            let latestPriceIndex = currentProductArr.length - 1;
+                            let lastWeekIndex = latestPriceIndex - 1;
+                            
+                            console.log (latestPriceIndex, lastWeekIndex);
+
+                            if (lastWeekIndex >= 0) {
+                                // Convert the price string to a number for calculations
+                                const currentPrice = parseFloat(currentProductArr[latestPriceIndex].price);
+                                const lastWeekPrice = lastWeekIndex >= 0 ? parseFloat(currentProductArr[lastWeekIndex].price) : currentPrice;
+                                const priceChangePercentage = ((currentPrice - lastWeekPrice) / lastWeekPrice) * 100;
+
+                                console.log(typeof(priceChangePercentage));
+                        
+
+                                return {
+                                    ...product,
+                                    priceChange: Math.round(priceChangePercentage * 1e1) / 1e1 // Update the price change
+                                };
+                            }
+                        }
+
+                        return product;
+                    }) || [];
+                });
+
+
+                console.log(priceHistoryArr);
+
+            })
+            .catch(err => {
+
+                console.log(err);
+
+            });
+
     }
 
 
@@ -137,9 +208,11 @@ function Dashboard() {
                         <div className="w-full mx-4 h-[1px] bg-black"></div>
                     </div>
 
-                    <div className="flex justify-center items-center mt-10 gap-10">
-                        <LineChart data={priceHistoryData} product={chartProductName}/>
-                    </div>
+                    {priceHistoryData.length > 0 && (
+                        <div className="flex justify-center items-center mt-10 gap-10">
+                            <LineChart data={priceHistoryData} product={chartProductName} />
+                        </div>
+                    )}
 
                     <div className="flex justify-center mt-10">
                         <table className="w-9/12 shadow-md rounded-xl mb-10">
@@ -156,7 +229,7 @@ function Dashboard() {
                                     <tr
                                         key={item.id}
                                         className={index % 2 === 0 ? 'bg-gray-100 text-xl ' : 'bg-white text-xl'}
-                                        style={{cursor: "pointer", height: '60px'}}
+                                        style={{ cursor: "pointer", height: '60px' }}
                                         onClick={() => fetchPriceHistory(item, item.product_name)}
                                     >
                                         <td className="flex justify-center items-center h-[60px]">
@@ -176,7 +249,14 @@ function Dashboard() {
                                         </td>
                                         <td className="text-left sm:text-center">{item.product_name}</td>
                                         <td className="text-center">{item.price}</td>
-                                        <td className="text-center">{ }</td>
+
+                                        {item.priceChange > 0 ? (
+
+                                            <td className="text-center font-bold text-green-600">+{item.priceChange}%</td>
+                                        ) : item.priceChange === 0 ? (<td className="text-center font-bold text-blue-600">{item.priceChange}%</td>) : (
+                                            <td className="text-center font-bold text-red-600">{item.priceChange}%</td>
+                                        )}
+
                                     </tr>
                                 ))}
                             </tbody>

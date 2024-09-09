@@ -1,4 +1,4 @@
-
+import Logo from '../assets/images/logo.png';
 
 function Home() {
 
@@ -8,7 +8,9 @@ function Home() {
             {/* container */}
             <div className="bg-gray-800 h-screen overflow-x-hidden">
 
-                <header className="w-full border-b h-20 border-gray-400"></header>
+                <header className="w-full border-b h-20 border-gray-400 flex justify-center items-center">
+                    <img src={Logo} className="w-28 cursor-pointer"/>
+                </header>
 
                 {/* hero section */}
 
