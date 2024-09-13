@@ -165,7 +165,7 @@ app.post('/cms/add-product', (req, res) => {
         }
 
 
-        return res.json({ Status: 'success', product_id: data.insertId});
+        return res.json({ Status: 'success', product_id: data.insertId });
       });
     }
   });
@@ -244,8 +244,8 @@ app.post('/price-history/new', (req, res) => {
 
   db.query(insertQuery, [productId, price, date], (err, data) => {
 
-    if(err) {
-      
+    if (err) {
+
       return res.json({ error: 'Error during DB query: ' + err });
 
     }
@@ -340,7 +340,6 @@ app.post('/login', (req, res) => {
   });
 });
 
-
 // logout
 
 app.get('/logout', (req, res) => {
@@ -404,7 +403,7 @@ app.get('/favourites', authenticate, async (req, res) => {
   });
 });
 
-app.delete('/favourites/delete/:id' , authenticate, (req, res) => {
+app.delete('/favourites/delete/:id', authenticate, (req, res) => {
 
   const favProductId = req.params.id;
 
@@ -455,13 +454,13 @@ app.get('/price-history', (req, res) => {
 
     if (err) {
 
-      return res.json({error: 'DB Error: ' + err});
+      return res.json({ error: 'DB Error: ' + err });
 
     }
 
-    return res.json({status: 'success', prices: data});
+    return res.json({ status: 'success', prices: data });
 
-    
+
   });
 })
 
@@ -475,18 +474,54 @@ app.get('/price-history/:id', (req, res) => {
 
     if (err) {
 
-      return res.json({error: 'DB Error: ' + err});
+      return res.json({ error: 'DB Error: ' + err });
 
     }
 
     if (data.length === 0) {
-      return res.json({error: "Product doesn't exist in the database !"});
+      return res.json({ error: "Product doesn't exist in the database !" });
     }
 
-    return res.json({status: 'success', prices: data});
+    return res.json({ status: 'success', prices: data });
 
-    
+
   });
+})
+
+app.put('/update/email/:id', (req, res) => {
+
+  const userId = req.params.id;
+  const newEmail = req.body.email;
+
+  const selectQuery = 'SELECT * FROM users WHERE email = ?;';
+
+  db.query(selectQuery, [newEmail], (err, data) => {
+
+    if (err) {
+
+      return res.status(500).json({ error: 'DB Error: ' + err });
+    }
+
+    if (data.length > 0) {
+
+      return res.status(500).json({ error: 'Email is already in use. Please use a different email !' });
+    }
+
+    const updateQuery = 'UPDATE users SET email = ? WHERE id = ?;';
+
+    db.query(updateQuery, [newEmail, userId], (err, data) => {
+
+      if (err) {
+
+        return res.status(500).json({ error: 'DB Error: ' + err });
+      }
+
+      return res.status(200).json({ status: 'success', message: 'Email has been updated successfully.' })
+    })
+
+
+  })
+
 })
 
 // Start the server

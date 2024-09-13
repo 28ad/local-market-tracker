@@ -15,7 +15,7 @@ interface Product {
 
 interface PriceHistory {
     product_id: number;
-    price: string; 
+    price: string;
     updated_on: string;
 }
 
@@ -116,8 +116,8 @@ function Dashboard() {
 
                             let latestPriceIndex = currentProductArr.length - 1;
                             let lastWeekIndex = latestPriceIndex - 1;
-                            
-                            console.log (latestPriceIndex, lastWeekIndex);
+
+                            console.log(latestPriceIndex, lastWeekIndex);
 
                             if (lastWeekIndex >= 0) {
                                 // Convert the price string to a number for calculations
@@ -125,8 +125,8 @@ function Dashboard() {
                                 const lastWeekPrice = lastWeekIndex >= 0 ? parseFloat(currentProductArr[lastWeekIndex].price) : currentPrice;
                                 const priceChangePercentage = ((currentPrice - lastWeekPrice) / lastWeekPrice) * 100;
 
-                                console.log(typeof(priceChangePercentage));
-                        
+                                console.log(typeof (priceChangePercentage));
+
 
                                 return {
                                     ...product,
@@ -214,7 +214,26 @@ function Dashboard() {
                         </div>
                     )}
 
-                    <div className="flex justify-center mt-10">
+                    <div className="flex flex-col justify-end items-center mt-10">
+
+                        {/* product search */}
+                        <div className="w-9/12 h-20 flex justify-center md:justify-end items-center">
+
+                            <input
+                                className="rounded-sm border border-gray-500 pl-2 py-1 text-xl focus:outline-orange-500"
+                                type="text" name="search" id="search" placeholder="Search product..." />
+
+                            <button className="p-2 bg-gray-800 active:bg-orange-500">
+
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="white" className="size-6">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                                </svg>
+
+                            </button>
+
+                        </div>
+
+                        {/* all products table */}
                         <table className="w-9/12 shadow-md rounded-xl mb-10">
                             <thead>
                                 <tr className="h-16 text-xl">

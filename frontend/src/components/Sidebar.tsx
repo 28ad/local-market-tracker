@@ -37,13 +37,10 @@ function Sidebar() {
         }
     ];
 
-
-    const username = 'wizz28';
-
     return (
 
         <>
-            <aside className={`${isMenuClosed ? 'w-full sm:w-64' : 'w-16'} bg-gray-800 fixed min-h-screen`} style={{ minHeight: '100dvh', }}>
+            <aside className={`${isMenuClosed ? 'w-full sm:w-64' : 'w-16'} transition-all duration-300 ease-in-out bg-gray-800 fixed min-h-screen`} style={{ minHeight: '100dvh', }}>
 
                 {isMenuClosed ? (
 
@@ -56,8 +53,9 @@ function Sidebar() {
                             <svg
                                 onClick={toggleSidebar}
                                 xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-8 text-white mr-4 cursor-pointer hover:text-orange-500 transition ease-in-out duration-300">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                             </svg>
+                            
 
                         </div>
 
@@ -73,7 +71,7 @@ function Sidebar() {
                                 <Link
                                     onClick={() => setActiveLink(link.route)}
                                     to={link.route} key={link.name}
-                                    className={`text-white text-xl cursor-pointer  py-4 pl-4 ${link.route === activeLink ? 'bg-orange-500' : 'hover:bg-gray-500'} transition ease-in-out duration-300`}>
+                                    className={`text-white text-xl font-bold cursor-pointer  py-4 pl-4 ${link.route === activeLink ? 'bg-orange-500' : 'hover:bg-gray-500'} transition ease-in-out duration-300`}>
                                     <p>{link.name}</p>
                                 </Link>
                             )}
@@ -84,10 +82,8 @@ function Sidebar() {
 
                         <footer className="absolute bottom-0 py-2 w-full cursor-pointer hover:bg-gray-600 transition ease-in-out duration-300">
 
-                            <Link to="/account" className="flex items-center justify-between gap-4">
-                                <p className="text-white text-xl ml-4">{username}</p>
-                                {/* user proifle picture */}
-                                <div className="w-10 h-10 rounded-full bg-white mr-4"></div>
+                            <Link to="/account" className="flex items-center justify-center py-2 gap-4">
+                                <p className="text-white text-xl ml-4 font-bold">LOG OUT</p>
                             </Link>
 
                         </footer>
@@ -107,8 +103,9 @@ function Sidebar() {
                         <footer className="absolute bottom-0 py-2 w-full cursor-pointer hover:bg-gray-600">
 
                             <Link to="/account" className="flex items-center justify-center p-2">
-                                {/* user proifle picture */}
-                                <div className="w-10 h-10 rounded-full bg-white"></div>
+                                <div>
+                                    <img src={Logo} />
+                                </div>
                             </Link>
 
                         </footer>
