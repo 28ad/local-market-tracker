@@ -1,18 +1,32 @@
 import Sidebar from "../components/Sidebar";
 import Toggle from "../components/Toggle";
-import SuccessAlert from "../components/SuccessAlert";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+interface Status {
+    message: string;
+    type: string;
+}
 
 function Settings() {
 
+    const navigate = useNavigate();
+
     const [editEmail, setEditEmail] = useState(false);
-    const [displayStatus, setDisplayStatus] = useState(true);
     const [disableInput, setDisableInput] = useState(true);
-    const [statusMessage, setStatusMessage] = useState<string>('');
+    const [statusMessage, setStatusMessage] = useState<Status>({
+        message: '',
+        type: ''
+    });
 
     const [newEmail, setNewEmail] = useState<string>('');
     const [userEmail, setUserEmail] = useState<string>('');
+    const [currentPass, setCurrentPass] = useState<string>('');
+    const [newPass, setNewPass] = useState<string>('');
+    const [newPassConf, setNewPassConf] = useState<string>('');
 
     const [userId, setUserId] = useState<string>('');
 
@@ -43,10 +57,78 @@ function Settings() {
         fetchUserEmail();
     }, [])
 
+    const infoNotification = () => {
+
+        toast.info(statusMessage.message, {
+            position: "bottom-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+
+        });
+
+    }
+
+    const successNotification = () => {
+
+        toast.success(statusMessage.message, {
+            position: "bottom-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+
+        });
+
+    }
+
+    const errorNotification = () => {
+
+        toast.error(statusMessage.message, {
+            position: "bottom-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: "light",
+
+        });
+    }
+
+    useEffect(() => {
+
+        if (statusMessage.type === 'info') {
+            infoNotification();
+
+        }
+        else if (statusMessage.type === 'success') {
+
+            successNotification();
+
+        } else if (statusMessage.type === 'error') {
+            errorNotification();
+        }
+
+    }, [statusMessage])
+
     const toggleEmailEdit = () => {
 
         setEditEmail(!editEmail)
         setDisableInput(!disableInput);
+
+        if (!editEmail) {
+            setStatusMessage({message: 'You can now edit your email !', type: 'info'});
+        }
+
 
     }
 
@@ -72,15 +154,23 @@ function Settings() {
         } else {
 
             console.log("Please make sure you insert a valid email address !");
+            setStatusMessage({message: 'Please make sure you insert a valid email address !', type: 'error'});
+
             return;
         }
 
         if (newEmail === userEmail) {
             console.log("This email is currently in use !")
+            setStatusMessage({message: 'This email is currently in use !', type: 'error'});
+
+            return;
         }
 
         if (newEmail === '') {
             console.log("No email inputed, nothing changed");
+            setStatusMessage({message: 'No email inputed, nothing changed', type: 'error'});
+
+            return;
         }
 
         // if email valid send to server
@@ -89,7 +179,12 @@ function Settings() {
 
                 if (res.status === 200) {
                     console.log(res.data.message);
+                    setStatusMessage({message: res.data.message, type: 'success'});
+
+                    navigate('/settings');
                 }
+
+
 
             })
             .catch(err => {
@@ -98,8 +193,57 @@ function Settings() {
                     // Server responded with a status code that falls out of the range of 2xx
                     console.log("Error:", err.response.data.error);
                     console.log("Status code:", err.response.status);
+                    setStatusMessage({message: err.response.data.error, type: 'error'});
+
                 }
             })
+    }
+
+    const validatePassword = () => {
+
+        if (newPass === '' || newPassConf === '' || currentPass === '') {
+            console.log('All fields must be completed !');
+            setStatusMessage({message: 'All fields must be completed !', type: 'error'});
+            return false;
+        }
+
+        if (newPass !== newPassConf) {
+
+            console.log('Passwords do not match !');
+            setStatusMessage({message: 'Passwords do not match !', type: 'error'});
+            return false;
+        }
+
+        return true;
+    }
+
+    const updatePassword = () => {
+
+        console.log(currentPass);
+        console.log(newPass);
+
+        if (!validatePassword()) {
+            return;
+        }
+
+        axios.put(`http://localhost:3000/update/password/${userId}`, { newPassword: newPass, currentPassword: currentPass })
+            .then(res => {
+
+                console.log(res.data.message);
+                navigate('/settings');
+                setShowModal(false);
+                setStatusMessage({message: 'Password has been changed successfully !', type: 'success'});
+
+            })
+            .catch(err => {
+
+                if (err.response) {
+
+                    console.log(err.response.data.error);
+                    setStatusMessage({message: err.response.data.error, type: 'error'});
+                }
+            });
+
     }
 
     return (
@@ -177,9 +321,9 @@ function Settings() {
 
                                 <p className="font-bold mt-2">Change your password</p>
 
-                                <button 
-                                onClick={() => setShowModal(true)}
-                                className="py-4 bg-gray-800 active:bg-orange-500 hover:bg-gray-900 font-bold text-white cursor-pointer w-[287px]">
+                                <button
+                                    onClick={() => setShowModal(true)}
+                                    className="py-4 bg-gray-800 active:bg-orange-500 hover:bg-gray-900 font-bold text-white cursor-pointer w-[287px]">
                                     CHANGE PASSWORD
                                 </button>
 
@@ -237,7 +381,7 @@ function Settings() {
                                                 Current Password
                                             </label>
                                             <input
-                                                onChange={(e) => { }}
+                                                onChange={(e) => { setCurrentPass(e.target.value) }}
                                                 className="shadow appearance-none border rounded w-full py-2 px-1 text-black"
                                                 type="password" />
 
@@ -246,7 +390,7 @@ function Settings() {
                                                 New Password
                                             </label>
                                             <input
-                                                onChange={(e) => { }}
+                                                onChange={(e) => { setNewPass(e.target.value) }}
                                                 className="shadow appearance-none border rounded w-full py-2 px-1 text-black"
                                                 type="password" />
 
@@ -255,7 +399,7 @@ function Settings() {
                                                 Confirm New Password
                                             </label>
                                             <input
-                                                onChange={(e) => { }}
+                                                onChange={(e) => { setNewPassConf(e.target.value) }}
                                                 className="shadow appearance-none border rounded w-full py-2 px-1 text-black"
                                                 type="password" />
 
@@ -270,6 +414,7 @@ function Settings() {
                                             Close
                                         </button>
                                         <button
+                                            onClick={updatePassword}
                                             className="text-white bg-orange-500 hover:bg-orange-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1"
                                             type="button"
                                         >
@@ -282,6 +427,20 @@ function Settings() {
                     )}
                 </div>
             </div>
+            <ToastContainer
+                position="bottom-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+            />
+
+
         </>
 
     );

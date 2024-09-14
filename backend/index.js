@@ -524,6 +524,43 @@ app.put('/update/email/:id', (req, res) => {
 
 })
 
+app.put('/update/password/:id', (req, res) => {
+
+  let userId = req.params.id;
+  let currentPassword = req.body.currentPassword;
+  let newPassword = req.body.newPassword;
+
+  const selectQuery = 'SELECT * FROM users WHERE id = ?;';
+
+  db.query(selectQuery, [userId], (err, data) => {
+
+    if (err) {
+
+      return res.status(500).json({error: 'DB Query error: ' + err});
+    }
+
+    if (data.length > 0) {
+
+      if (data[0].pass !== currentPassword) {
+
+        return res.status(500).json({error: 'Your password is incorrect. Please try again !'});
+      }
+
+      const updateQuery = 'UPDATE users SET pass = ? WHERE id = ?; ';
+
+      db.query(updateQuery, [newPassword, userId], (err, data) => {
+        
+        if (err) {
+
+          return res.status(500).json({error: 'DB Query error: ' + err});
+        }
+
+        return res.status(200).json({message: 'Your password has been changed successfuly !'});
+      })
+    }
+  })
+})
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
