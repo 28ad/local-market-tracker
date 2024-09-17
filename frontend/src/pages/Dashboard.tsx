@@ -11,6 +11,7 @@ interface Product {
     price: number;
     addToFavourites?: boolean;
     priceChange: number;
+
 }
 
 interface PriceHistory {
@@ -21,7 +22,9 @@ interface PriceHistory {
 
 function Dashboard() {
 
-    const [products, setProducts] = useState<Product[] | null>([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [searchResults, setSearchResults] = useState<Product[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const [favourites, setFavourites] = useState<number[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>();
     const [priceHistoryData, setPriceHistoryData] = useState([]);
@@ -47,7 +50,6 @@ function Dashboard() {
                 addToFavourites: favourites.includes(product.id),
             }));
 
-            console.log(setFavStatusProducts);
             setProducts(setFavStatusProducts);
 
             setTimeout(() => { setIsLoading(false) }, 2000);
@@ -107,8 +109,8 @@ function Dashboard() {
 
                         const matchedPriceHistory = priceHistoryArr.find(history => history.product_id === product.id);
 
-                        console.log(matchedPriceHistory);
-                        console.log(product);
+                        // console.log(matchedPriceHistory);
+                        // console.log(product);
 
                         if (matchedPriceHistory) {
 
@@ -116,8 +118,6 @@ function Dashboard() {
 
                             let latestPriceIndex = currentProductArr.length - 1;
                             let lastWeekIndex = latestPriceIndex - 1;
-
-                            console.log(latestPriceIndex, lastWeekIndex);
 
                             if (lastWeekIndex >= 0) {
                                 // Convert the price string to a number for calculations
@@ -139,9 +139,6 @@ function Dashboard() {
                     }) || [];
                 });
 
-
-                console.log(priceHistoryArr);
-
             })
             .catch(err => {
 
@@ -152,7 +149,10 @@ function Dashboard() {
     }
 
 
-    const toggleFavourites = async (item: Product) => {
+    const toggleFavourites = async (item: Product, e: React.MouseEvent) => {
+
+        e.stopPropagation();
+
         let favList: Product[] = [];
 
         setProducts((prevProducts) => {
@@ -191,6 +191,23 @@ function Dashboard() {
         }
     };
 
+    const searchProducts = (event: string) => {
+
+        setSearchTerm(event);
+
+        const resultsArr = products?.filter((product) => product.product_name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        setSearchResults(resultsArr);
+
+        console.log(searchResults);
+        console.log('length: ' + searchResults.length);
+
+    }
+
+    useEffect(() => {
+        console.log(searchTerm);
+    }, [searchTerm])
+
     return (
         <div className="flex flex-row overflow-hidden">
 
@@ -220,6 +237,10 @@ function Dashboard() {
                         <div className="w-9/12 h-20 flex justify-center md:justify-end items-center">
 
                             <input
+                                onChange={(e: React.FormEvent<HTMLInputElement>) => {
+                                    const target = e.target as HTMLInputElement;
+                                    searchProducts(target.value);
+                                }}
                                 className="rounded-sm border border-gray-500 pl-2 py-1 text-xl focus:outline-orange-500"
                                 type="text" name="search" id="search" placeholder="Search product..." />
 
@@ -234,52 +255,112 @@ function Dashboard() {
                         </div>
 
                         {/* all products table */}
-                        <table className="w-9/12 shadow-md rounded-xl mb-10">
-                            <thead>
-                                <tr className="h-16 text-xl">
-                                    <th className="w-8"></th>
-                                    <th className="w-[150px]">Product</th>
-                                    <th className="w-[150px]">Price/kg (RON)</th>
-                                    <th className="w-[150px]">Last Week Change</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {products?.map((item, index) => (
-                                    <tr
-                                        key={item.id}
-                                        className={index % 2 === 0 ? 'bg-gray-100 text-xl ' : 'bg-white text-xl'}
-                                        style={{ cursor: "pointer", height: '60px' }}
-                                        onClick={() => fetchPriceHistory(item, item.product_name)}
-                                    >
-                                        <td className="flex justify-center items-center h-[60px]">
-                                            {item.addToFavourites ? (
-                                                <svg
-                                                    onClick={() => toggleFavourites(item)}
-                                                    xmlns="http://www.w3.org/2000/svg" fill="gold" viewBox="0 0 24 24" strokeWidth="1.5" stroke="gold" className="size-6 cursor-pointer">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
-                                                </svg>
-                                            ) : (
-                                                <svg
-                                                    onClick={() => toggleFavourites(item)}
-                                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="gold" className="size-6 cursor-pointer">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
-                                                </svg>
-                                            )}
-                                        </td>
-                                        <td className="text-left sm:text-center">{item.product_name}</td>
-                                        <td className="text-center">{item.price}</td>
 
-                                        {item.priceChange > 0 ? (
+                        {searchTerm === "" ? (
 
-                                            <td className="text-center font-bold text-green-600">+{item.priceChange}%</td>
-                                        ) : item.priceChange === 0 ? (<td className="text-center font-bold text-blue-600">{item.priceChange}%</td>) : (
-                                            <td className="text-center font-bold text-red-600">{item.priceChange}%</td>
-                                        )}
+                            // if there is no search criteria display standard products list
+                            <>
+                                <table className="w-9/12 shadow-md rounded-xl mb-10">
+                                    <thead>
+                                        <tr className="h-16 text-xl">
+                                            <th className="w-8"></th>
+                                            <th className="w-[150px]">Product</th>
+                                            <th className="w-[150px]">Price/kg (RON)</th>
+                                            <th className="w-[150px]">Last Week Change</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {products?.map((item, index) => (
+                                            <tr
+                                                key={item.id}
+                                                className={index % 2 === 0 ? 'bg-gray-100 text-xl ' : 'bg-white text-xl'}
+                                                style={{ cursor: "pointer", height: '60px' }}
+                                                onClick={() => fetchPriceHistory(item, item.product_name)}
+                                            >
+                                                <td className="flex justify-center items-center h-[60px]">
+                                                    {item.addToFavourites ? (
+                                                        <svg
+                                                            onClick={(e) => toggleFavourites(item, e)}
+                                                            xmlns="http://www.w3.org/2000/svg" fill="gold" viewBox="0 0 24 24" strokeWidth="1.5" stroke="gold" className="size-6 cursor-pointer">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                                                        </svg>
+                                                    ) : (
+                                                        <svg
+                                                            onClick={(e) => toggleFavourites(item, e)}
+                                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="gold" className="size-6 cursor-pointer">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                                                        </svg>
+                                                    )}
+                                                </td>
+                                                <td className="text-left sm:text-center">{item.product_name}</td>
+                                                <td className="text-center">{item.price}</td>
 
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                                {item.priceChange > 0 ? (
+
+                                                    <td className="text-center font-bold text-green-600">+{item.priceChange}%</td>
+                                                ) : item.priceChange === 0 ? (<td className="text-center font-bold text-blue-600">{item.priceChange}%</td>) : (
+                                                    <td className="text-center font-bold text-red-600">{item.priceChange}%</td>
+                                                )}
+
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </>
+                        ) : (
+
+                            // display search results if user searches
+                            <>
+                                <table className="w-9/12 shadow-md rounded-xl mb-10">
+                                    <thead>
+                                        <tr className="h-16 text-xl">
+                                            <th className="w-8"></th>
+                                            <th className="w-[150px]">Product</th>
+                                            <th className="w-[150px]">Price/kg (RON)</th>
+                                            <th className="w-[150px]">Last Week Change</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {searchResults?.map((item, index) => (
+                                            <tr
+                                                key={item.id}
+                                                className={index % 2 === 0 ? 'bg-gray-100 text-xl ' : 'bg-white text-xl'}
+                                                style={{ cursor: "pointer", height: '60px' }}
+                                                onClick={() => fetchPriceHistory(item, item.product_name)}
+                                            >
+                                                <td className="flex justify-center items-center h-[60px]">
+                                                    {item.addToFavourites ? (
+                                                        <svg
+                                                            onClick={(e) => toggleFavourites(item, e)}
+                                                            xmlns="http://www.w3.org/2000/svg" fill="gold" viewBox="0 0 24 24" strokeWidth="1.5" stroke="gold" className="size-6 cursor-pointer">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                                                        </svg>
+                                                    ) : (
+                                                        <svg
+                                                            onClick={(e) => toggleFavourites(item, e)}
+                                                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="gold" className="size-6 cursor-pointer">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" />
+                                                        </svg>
+                                                    )}
+                                                </td>
+                                                <td className="text-left sm:text-center">{item.product_name}</td>
+                                                <td className="text-center">{item.price}</td>
+
+                                                {item.priceChange > 0 ? (
+
+                                                    <td className="text-center font-bold text-green-600">+{item.priceChange}%</td>
+                                                ) : item.priceChange === 0 ? (<td className="text-center font-bold text-blue-600">{item.priceChange}%</td>) : (
+                                                    <td className="text-center font-bold text-red-600">{item.priceChange}%</td>
+                                                )}
+
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </>
+                        )}
+
+
                     </div>
                 </div>
             }
